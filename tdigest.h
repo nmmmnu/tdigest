@@ -90,31 +90,15 @@ public:
 	}
 
 private:
-
 	size_t getSize_(const Centroid *cd) const;
 
 	std::pair<uint64_t, size_t> getWeightAndSize_(const Centroid *cd) const;
 
 	double percentile_(const Centroid *cd, size_t size, uint64_t weight, double const p) const;
 
-	size_t compressNormal_(Centroid *cd, size_t size) const{
-		if (size < 2)
-			return size;
+	size_t compressNormal_(Centroid *cd, size_t size) const;
 
-		return compressCentroids_<1>(cd, size, delta_);
-	}
-
-	size_t compressAggressive_(Centroid *cd, size_t size) const{
-		if (size < 2)
-			return size;
-
-		auto const distance = findMinDistance__(cd, size);
-
-		if (distance > delta_)
-			return compressCentroids_<0>(cd, size, distance);
-		else
-			return compressCentroids_<1>(cd, size, delta_);
-	}
+	size_t compressAggressive_(Centroid *cd, size_t size) const;
 
 	template<bool UseWeight>
 	size_t compressCentroids_(Centroid *cd, size_t size, double delta) const;

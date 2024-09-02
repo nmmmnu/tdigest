@@ -161,6 +161,25 @@ template void RawTDigest::add<RawTDigest::Compression::AGGRESSIVE	>(Centroid *cd
 
 
 
+size_t RawTDigest::compressNormal_(Centroid *cd, size_t size) const{
+	if (size < 2)
+		return size;
+
+	return compressCentroids_<1>(cd, size, delta_);
+}
+
+size_t RawTDigest::compressAggressive_(Centroid *cd, size_t size) const{
+	if (size < 2)
+		return size;
+
+	auto const distance = findMinDistance__(cd, size);
+
+	if (distance > delta_)
+		return compressCentroids_<0>(cd, size, distance);
+	else
+		return compressCentroids_<1>(cd, size, delta_);
+}
+
 template<bool UseWeight>
 size_t RawTDigest::compressCentroids_(Centroid *cd, size_t size, double delta) const{
 	assert(size > 1);
@@ -196,9 +215,6 @@ size_t RawTDigest::compressCentroids_(Centroid *cd, size_t size, double delta) c
 
 	return newSize;
 }
-
-template size_t RawTDigest::compressCentroids_<true	>(Centroid *cd, size_t size, double delta) const;
-template size_t RawTDigest::compressCentroids_<false	>(Centroid *cd, size_t size, double delta) const;
 
 
 
