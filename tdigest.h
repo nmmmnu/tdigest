@@ -4,13 +4,13 @@
 #include <cstdint>
 #include <cassert>
 #include <cstring>
-#include <algorithm>
+#include <algorithm>	// transform
 
 class RawTDigest{
 	size_t	capacity_;
 	double	delta_;
 
-	static const size_t sizeOfCentroid__;
+	static const size_t sizeof_Centroid__;
 
 public:
 	struct Centroid;
@@ -30,15 +30,17 @@ public:
 		return capacity_;
 	}
 
-	static void clearFast(Centroid *cd);
-
 	constexpr size_t bytes() const{
-		return capacity_ * sizeOfCentroid__;
+		return capacity_ * sizeof_Centroid__;
 	}
 
 	void print(const Centroid *cd) const;
 
 public:
+	static void clearFast(Centroid *cd){
+		memset(cd, 0, sizeof_Centroid__);
+	}
+
 	void clear(Centroid *cd) const{
 		memset(cd, 0, bytes());
 	}

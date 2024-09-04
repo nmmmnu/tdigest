@@ -56,13 +56,9 @@ struct RawTDigest::Centroid{
 
 static_assert(std::is_trivial_v<RawTDigest::Centroid>);
 
-const size_t RawTDigest::sizeOfCentroid__ = sizeof(RawTDigest::Centroid);
+const size_t RawTDigest::sizeof_Centroid__ = sizeof(RawTDigest::Centroid);
 
 
-
-void RawTDigest::clearFast(Centroid *cd){
-	cd[0].clear();
-}
 
 void RawTDigest::print(const Centroid *cd) const{
 	printf("Centroids, capacity %zu\n", capacity());
