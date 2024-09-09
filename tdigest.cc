@@ -25,32 +25,40 @@ namespace {
 
 
 struct RawTDigest::Centroid{
-	double   mean;
-	uint64_t weight;
+	double   mean_;
+	uint64_t weight_;
 
-	// constexpr static Centroid create(double m = 0, uint64_t w = 0){
-	// 	return Centroid{ m, w };
-	// }
-
-	void clear(){
-		mean   = 0;
-		weight = 0;
+	constexpr static auto create(double mean, uint64_t weight){
+		return Centroid{ mean, weight };
 	}
 
-	operator bool() const{
-		return weight;
+	constexpr void clear(){
+		mean_   = 0;
+		weight_ = 0;
 	}
 
-	double getWeightedMean() const{
-		return mean * static_cast<double>(weight);
+	constexpr auto getMean() const{
+		return mean_;
+	}
+
+	constexpr auto getWeight() const{
+		return weight_;
+	}
+
+	constexpr operator bool() const{
+		return weight_;
+	}
+
+	constexpr double getWeightedMean() const{
+		return getMean() * static_cast<double>(getWeight());
 	}
 
 	void print() const{
-		printf("> Addr %p | mean: %10.4f | weight: %5zu\n", (void *) this, mean, weight);
+		printf("> Addr %p | mean: %10.4f | weight: %5zu\n", (void *) this, getMean(), getWeight());
 	}
 
-	friend bool operator<(Centroid const &a, Centroid const &b){
-		return a.mean < b.mean;
+	friend constexpr bool operator<(Centroid const &a, Centroid const &b){
+		return a.getMean() < b.getMean();
 	}
 };
 
@@ -96,7 +104,7 @@ std::pair<uint64_t, size_t> RawTDigest::getWeightAndSize_(const Centroid *cd) co
 		if (!x)
 			break;
 
-		r.first += x.weight;
+		r.first += x.getWeight();
 		++r.second;
 	}
 
@@ -111,12 +119,12 @@ double RawTDigest::percentile_(const Centroid *cd, size_t size, uint64_t weight,
 	double cumulativeWeight = 0;
 
 	for(size_t i = 0; i < size - 1; ++i){
-		cumulativeWeight += static_cast<double>(cd[i].weight);
+		cumulativeWeight += static_cast<double>(cd[i].getWeight());
 		if (cumulativeWeight >= targetRank)
-			return cd[i].mean;
+			return cd[i].getMean();
 	}
 
-	return cd[size - 1].mean;
+	return cd[size - 1].getMean();
 }
 
 template<RawTDigest::Compression C>
@@ -126,7 +134,7 @@ void RawTDigest::add(Centroid *cd, double value, uint64_t weight) const{
 	auto size = getSize_(cd);
 
 	auto insert = [&](){
-		insertIntoSortedRange(cd, cd + size, Centroid{ value, weight} );
+		insertIntoSortedRange(cd, cd + size, Centroid::create(value, weight) );
 
 		if (++size < capacity())
 			cd[size].clear();
@@ -191,13 +199,15 @@ size_t RawTDigest::compressCentroids_(Centroid *cd, size_t size, double delta) c
 	};
 
 	for (size_t i = 1; i < size; ++i){
-		auto const distance = std::abs(cd[i].mean - current.mean);
-		auto const weight_u = current.weight + cd[i].weight;
+		auto const distance = std::abs(cd[i].getMean() - current.getMean());
+		auto const weight_u = current.getWeight() + cd[i].getWeight();
 		auto const weight   = static_cast<double>(weight_u);
 
 		if (_(weight) * distance <= delta) {
-			current.mean   = (current.getWeightedMean() + cd[i].getWeightedMean()) / weight;
-			current.weight = weight_u;
+			current = Centroid::create(
+					(current.getWeightedMean() + cd[i].getWeightedMean()) / weight,
+					weight_u
+			);
 		}else{
 			cd[newSize++] = current;
 			current = cd[i];
@@ -220,7 +230,7 @@ double RawTDigest::findMinDistance__(const Centroid *cd, size_t const size){
 	double minDistance = std::numeric_limits<double>::max();
 
 	for(auto it = cd; it != cd + size - 1; ++it){
-		auto const distance = std::abs(it->mean - std::next(it)->mean);
+		auto const distance = std::abs(it->getMean() - std::next(it)->getMean());
 
 		if (distance < minDistance)
 			minDistance = distance;
